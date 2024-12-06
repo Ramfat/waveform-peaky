@@ -11,7 +11,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            height: 100%;
             margin: 0;
             background-color: #f0f0f0;
             padding: 20px;
@@ -19,7 +19,7 @@
 
         #waveformHolder {
             width: 100%;
-            height: 64px;
+            height: 250px;
             overflow: hidden;
             margin-bottom: 20px;
             padding: 0 10px;
@@ -127,12 +127,6 @@
         #duration {
             right: 0;
         }
-        #waveformHolder {
-            width: 100%;
-            height: 64px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
         .time-element {
             padding-bottom: 20px;
         }
@@ -140,6 +134,22 @@
         #zoomSlider {
             width: 100%;
             margin: 20px 0;
+        }
+
+
+        /* Footer styles */
+        footer {
+            position: relative;
+            margin-top: 80px;
+            text-align: center;
+            width: 100%;
+            font-size: 14px;
+            color: #555;
+        }
+
+        footer img {
+            vertical-align: middle;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -168,6 +178,12 @@
 <input id="zoomSlider" type="range" min="1" max="150" value="10"/>
 <button id="resetZoomButton">Reset Zoom</button>
 
+<!-- Footer -->
+<footer>
+    <img src="https://static.wixstatic.com/media/4ecc56_ca9acea67a924329a2d206690278f010~mv2.png/v1/crop/x_0,y_0,w_950,h_519/fill/w_75,h_48,fp_0.50_0.50,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4ecc56_ca9acea67a924329a2d206690278f010~mv2.png" alt="Logo">
+    Created by Uthyrd
+</footer>
+
 <!-- Adding wavesurfer.js script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/2.0.4/wavesurfer.min.js"
         integrity="sha512-mhqErQ0f2UqnbsjgKpM96XfxVjVMnXpszEXKmnJk8467vR8h0MpiPauil8TKi5F5DldQGqNUO/XTyWbQku22LQ=="
@@ -180,18 +196,12 @@
     // Define the waveform gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.35)
     gradient.addColorStop(0, '#875f87') // Top color
-    gradient.addColorStop((canvas.height * 0.7) / canvas.height, '#656666') // Top color
-    gradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
-    gradient.addColorStop((canvas.height * 0.7 + 2) / canvas.height, '#ffffff') // White line
     gradient.addColorStop((canvas.height * 0.7 + 3) / canvas.height, '#695373') // Bottom color
-    gradient.addColorStop(1, '#B1B1B1') // Bottom color
+    gradient.addColorStop(1, '#34325d') // Bottom color
 
     // Define the progress gradient
     const progressGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.35)
     progressGradient.addColorStop(0, '#8380B6') // Top color
-    progressGradient.addColorStop((canvas.height * 0.7) / canvas.height, '#8380B6') // Top color
-    progressGradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
-    progressGradient.addColorStop((canvas.height * 0.7 + 2) / canvas.height, '#ffffff') // White line
     progressGradient.addColorStop((canvas.height * 0.7 + 3) / canvas.height, '#d294f6') // Bottom color
     progressGradient.addColorStop(1, '#b894f6') // Bottom color
 
@@ -202,6 +212,7 @@
         progressColor: progressGradient,
         barWidth: 2,
         responsive: true,
+        height: 500
     })
 
     const hover = document.querySelector('#hover')
