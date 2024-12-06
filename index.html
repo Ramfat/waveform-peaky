@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Waveform</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        #waveformHolder {
+            width: 100%;
+            height: 64px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .file-container,
+        #playButton,
+        #resetZoomButton {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #8380B6;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-container:hover,
+        #playButton:hover,
+        #resetZoomButton:hover {
+            background-color: #6b68a0;
+        }
+
+        @media (max-width: 600px) {
+            .file-container,
+            #playButton,
+            #resetZoomButton {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+
+        /* Custom styles for file input */
+        .file-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-container::before {
+            content: '📁 Select File';
+            display: inline-block;
+            background-color: #8380B6;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .file-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Custom styles for play/pause button */
+        #playButton::before {
+            content: '▶️ Play/Pause';
+        }
+
+        #waveform {
+            cursor: pointer;
+            position: relative;
+        }
+
+        #hover {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 10;
+            pointer-events: none;
+            height: 100%;
+            width: 0;
+            mix-blend-mode: overlay;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        #waveform:hover #hover {
+            opacity: 1;
+        }
+
+        #time,
+        #duration {
+            position: absolute;
+            z-index: 11;
+            top: 50%;
+            margin-top: -10px;
+            transform: translateY(-50%);
+            font-size: 13px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 2px;
+            color: #ddd;
+        }
+
+        #time {
+            left: 0;
+        }
+
+        #duration {
+            right: 0;
+        }
+        #waveformHolder {
+            width: 100%;
+            height: 64px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .time-element {
+            padding-bottom: 20px;
+        }
+        /* Styles for zoom slider */
+        #zoomSlider {
+            width: 100%;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="waveformHolder">
+    <div id="waveform">
+        <div class="time-element" id="time">0:00</div>
+        <div class="time-element" id="duration">0:00</div>
+        <div class="time-element" id="hover"></div>
+    </div>
+</div>
+
+<!-- Add a file input where the user should drag the file to load into WaveForm -->
+<h5 id="filename">No file selected</h5>
+<h4>1. Upload audio file</h4>
+<label class="file-container">
+    <input id="fileinput" type="file"/>
+</label>
+<h4>2. Click on the waveform or button below (or spacebar) to play/pause. Left-right keys to skip</h4>
+<!-- Add a play button to control the waveform playback -->
+<button id="playButton"></button>
+</body>
+
+<!-- Add a zoom slider to control the zoom level -->
+<h4>3. Use zoom to see details</h4>
+<input id="zoomSlider" type="range" min="1" max="150" value="10"/>
+<button id="resetZoomButton">Reset Zoom</button>
+
+<!-- Adding wavesurfer.js script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/2.0.4/wavesurfer.min.js"
+        integrity="sha512-mhqErQ0f2UqnbsjgKpM96XfxVjVMnXpszEXKmnJk8467vR8h0MpiPauil8TKi5F5DldQGqNUO/XTyWbQku22LQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    // Define the waveform gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.35)
+    gradient.addColorStop(0, '#875f87') // Top color
+    gradient.addColorStop((canvas.height * 0.7) / canvas.height, '#656666') // Top color
+    gradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
+    gradient.addColorStop((canvas.height * 0.7 + 2) / canvas.height, '#ffffff') // White line
+    gradient.addColorStop((canvas.height * 0.7 + 3) / canvas.height, '#695373') // Bottom color
+    gradient.addColorStop(1, '#B1B1B1') // Bottom color
+
+    // Define the progress gradient
+    const progressGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.35)
+    progressGradient.addColorStop(0, '#8380B6') // Top color
+    progressGradient.addColorStop((canvas.height * 0.7) / canvas.height, '#8380B6') // Top color
+    progressGradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
+    progressGradient.addColorStop((canvas.height * 0.7 + 2) / canvas.height, '#ffffff') // White line
+    progressGradient.addColorStop((canvas.height * 0.7 + 3) / canvas.height, '#d294f6') // Bottom color
+    progressGradient.addColorStop(1, '#b894f6') // Bottom color
+
+    // Create the waveform
+    const wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: gradient,
+        progressColor: progressGradient,
+        barWidth: 2,
+        responsive: true,
+    })
+
+    const hover = document.querySelector('#hover')
+    const waveform = document.querySelector('#waveform')
+    waveform.addEventListener('pointermove', (e) => (hover.style.width = `${e.offsetX}px`))
+
+
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60)
+        const secondsRemainder = Math.round(seconds) % 60
+        const paddedSeconds = `0${secondsRemainder}`.slice(-2)
+        return `${minutes}:${paddedSeconds}`
+    }
+
+    const timeEl = document.querySelector('#time')
+    const durationEl = document.querySelector('#duration')
+    wavesurfer.on('ready', () => {
+        durationEl.textContent = formatTime(wavesurfer.getDuration())
+    })
+    wavesurfer.on('audioprocess', () => {
+        timeEl.textContent = formatTime(wavesurfer.getCurrentTime())
+    })
+</script>
+<script>
+    // Add event listener to the play button to control the waveform playback
+    document.getElementById("playButton").addEventListener('click', function () {
+        wavesurfer.playPause();
+    });
+    // Once the user loads a file in the fileinput, the file should be loaded into waveform
+    document.getElementById("fileinput").addEventListener('change', function (e) {
+        var file = this.files[0];
+
+        if (file) {
+            var reader = new FileReader();
+
+            reader.onload = function (evt) {
+                // Create a Blob providing as first argument a typed array with the file buffer
+                var blob = new window.Blob([new Uint8Array(evt.target.result)]);
+
+                // Load the blob into Wavesurfer
+                wavesurfer.loadBlob(blob);
+            };
+
+            reader.onerror = function (evt) {
+                console.error("An error ocurred reading the file: ", evt);
+            };
+
+            // Read File as an ArrayBuffer
+            reader.readAsArrayBuffer(file);
+        }
+        // Update the file name display
+        document.getElementById("filename").textContent = file.name;
+    }, false);
+    // Add event listener for spacebar to control the waveform playback
+    document.addEventListener('keydown', function (e) {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            wavesurfer.playPause();
+        }
+    });
+    // Add event listener to the zoom slider to control the zoom level
+    document.getElementById("zoomSlider").addEventListener('input', function () {
+        const zoomLevel = Number(this.value);
+        wavesurfer.zoom(zoomLevel);
+    });
+    // Add event listener to the reset zoom button to reset the zoom level
+    document.getElementById("resetZoomButton").addEventListener('click', function () {
+        document.getElementById("zoomSlider").value = 10;
+        wavesurfer.zoom(10);
+    });
+</script>
+</html>
